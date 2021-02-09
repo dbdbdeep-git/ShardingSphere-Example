@@ -1,4 +1,4 @@
 # ShardingSphere-Example
 ShardingSphere Example
 
-- ShardingSphere-Proxy, Docker Compose
+- sharding-proxy, Docker Compose
