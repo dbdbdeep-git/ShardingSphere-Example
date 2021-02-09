@@ -17,6 +17,13 @@
 
 version: '3'
 services:
+  zookeeper:
+    ## get more versions of zookeeper here : https://hub.docker.com/_/zookeeper?tab=tags
+    image: "zookeeper:3.6"
+    ports:
+      - "2181:2181"
+    container_name: sharding-sphere-zookeeper
+
   mysql:
     ## mysql version, you could get more tags at here : https://hub.docker.com/_/mysql?tab=tags
     image: "mysql:5.7"
@@ -24,6 +31,8 @@ services:
     ports:
      - "33060:3306"
     container_name: sharding-sphere-mysql
+    depends_on:
+     - zookeeper
     ## launch mysql without password
     ## you could access the mysql in container by following command :
     ## docker exec -it sharding-sphere-mysql mysql -uroot
@@ -40,6 +49,7 @@ services:
     container_name: sharding-sphere-proxy
     depends_on:
      - mysql
+     - zookeeper
     ## wait-for-it.sh will make proxy entry point wait until mysql container 3306 port open
     entrypoint: >
      /bin/sh -c "/opt/wait-for-it.sh sharding-sphere-mysql:3306 --timeout=20 --strict --
@@ -49,6 +59,7 @@ services:
      - "13307:3307"
     links:
      - "mysql:mysql"
+     - "zookeeper:zookeeper"
     volumes:
      - ./conf/:/opt/sharding-proxy/conf
      - ./ext-lib/:/opt/sharding-proxy/ext-lib
