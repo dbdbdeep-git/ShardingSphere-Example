@@ -20,17 +20,16 @@ services:
   zookeeper:
     ## get more versions of zookeeper here : https://hub.docker.com/_/zookeeper?tab=tags
     image: "zookeeper:3.6"
+    container_name: sharding-sphere-zookeeper
     ports:
       - "2181:2181"
-    container_name: sharding-sphere-zookeeper
 
   mysql:
     ## mysql version, you could get more tags at here : https://hub.docker.com/_/mysql?tab=tags
     image: "mysql:5.7"
     ## default port is 3306, you could change to 33060 or any other port doesn't conflict MySQL on your OS
-    ports:
-     - "33060:3306"
     container_name: sharding-sphere-mysql
+    privileged: true
     depends_on:
      - zookeeper
     ## launch mysql without password
@@ -40,6 +39,8 @@ services:
     # - MYSQL_ALLOW_EMPTY_PASSWORD=yes
     ## if you insist to use password in mysql, remove MYSQL_ALLOW_EMPTY_PASSWORD=yes and uncomment following args
       - MYSQL_ROOT_PASSWORD=root
+    ports:
+     - "33060:3306"
     volumes:
       - ../initdb/manual_schema.sql:/docker-entrypoint-initdb.d/manual_schema.sql
 
@@ -47,12 +48,13 @@ services:
     ## get more versions of proxy here : https://hub.docker.com/r/apache/sharding-proxy/tags
     image: "apache/sharding-proxy:5.0.0-alpha"
     container_name: sharding-sphere-proxy
+    privileged: true
     depends_on:
      - mysql
      - zookeeper
     ## wait-for-it.sh will make proxy entry point wait until mysql container 3306 port open
     entrypoint: >
-     /bin/sh -c "/opt/wait-for-it.sh sharding-sphere-mysql:3306 --timeout=20 --strict --
+     /bin/sh -c "/opt/wait-for-it.sh sharding-sphere-mysql:3306 --timeout=60 --strict --
      && /opt/sharding-proxy/bin/start.sh 3307 
      && tail -f /opt/sharding-proxy/logs/stdout.log"
     ports: 
@@ -61,9 +63,9 @@ services:
      - "mysql:mysql"
      - "zookeeper:zookeeper"
     volumes:
-     - ./conf/:/opt/sharding-proxy/conf
-     - ./ext-lib/:/opt/sharding-proxy/ext-lib
-     - ../tools/wait-for-it.sh:/opt/wait-for-it.sh
+     - "./conf/:/opt/sharding-proxy/conf"
+     - "./ext-lib/:/opt/sharding-proxy/ext-lib"
+     - "../tools/wait-for-it.sh:/opt/wait-for-it.sh:rw"
     environment:
      - JVM_OPTS="-Djava.awt.headless=true"
 
@@ -71,13 +73,12 @@ services:
     image: "apache/shardingsphere-ui:5.0.0-alpha"
     container_name: sharding-sphere-ui
     depends_on:
-     - mysql
      - zookeeper
+     - mysql
      - proxy
     ports:
      - "8088:8088"
     links:
-     - "mysql:mysql"
      - "zookeeper:zookeeper"
      - "proxy:proxy"
     environment:
