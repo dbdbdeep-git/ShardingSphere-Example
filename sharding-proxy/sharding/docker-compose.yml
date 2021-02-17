@@ -45,7 +45,7 @@ services:
 
   proxy:
     ## get more versions of proxy here : https://hub.docker.com/r/apache/sharding-proxy/tags
-    image: "apache/sharding-proxy:latest"
+    image: "apache/sharding-proxy:5.0.0-alpha"
     container_name: sharding-sphere-proxy
     depends_on:
      - mysql
@@ -66,5 +66,20 @@ services:
      - ../tools/wait-for-it.sh:/opt/wait-for-it.sh
     environment:
      - JVM_OPTS="-Djava.awt.headless=true"
-    
+
+  ui:
+    image: "apache/shardingsphere-ui:5.0.0-alpha"
+    container_name: sharding-sphere-ui
+    depends_on:
+     - mysql
+     - zookeeper
+     - proxy
+    ports:
+     - "8088:8088"
+    links:
+     - "mysql:mysql"
+     - "zookeeper:zookeeper"
+     - "proxy:proxy"
+    environment:
+     - JAVA_OPTS="-server -Xmx2g -Xms2g" 
 
